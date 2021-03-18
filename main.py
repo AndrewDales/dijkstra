@@ -2,13 +2,19 @@ from math import inf
 
 
 # The dijkstra algorithm
-def dijkstra(nodes, edges, start):
+def dijkstra(nodes, edges, start=None, end=None, detail=False, show_route=True):
+    if not start:
+        start = nodes[0]
+
     # Set up the priority queue
     priority_queue = {node: inf for node in nodes}
     priority_queue[start] = 0
 
     # set up the visited elements as an empty dict
     visited = {}
+
+    # Set up the routes dictionary - this will hold the quickest route found to each node
+    routes = {start: [start]}
 
     # continue as long as there are items in the priority queue
     while priority_queue:
@@ -19,17 +25,29 @@ def dijkstra(nodes, edges, start):
         # Add this node to the visited list
         visited[next_node] = next_dist
 
+        # If full details are not required and the end point has been reached return the minimum distance and the route
+        if next_node == end and (not detail):
+            if not show_route:
+                return next_dist
+            else:
+                return next_dist, routes[next_node]
+
         # Find the neighbours of the newly added node
         neighbours = {nd for nd in priority_queue if {nd, next_node} in set(edges.keys())}
-        #  For each unvisited neighbour of the new node check and if necessary update the distance to that neighbour
+        # For each unvisited neighbour of the new node check if the total distance to the neighbour, via the
+        # new node is less than distance to the neighbour that is already in the priority queue
         for neighbour in neighbours:
-            min_dist = min(priority_queue[neighbour], next_dist + edges[frozenset({next_node, neighbour})])
-            priority_queue[neighbour] = min_dist
+            new_dist = next_dist + edges[frozenset({next_node, neighbour})]
+            if new_dist < priority_queue[neighbour]:
+                # If the new distance is less than the existing distance, update the priority queue
+                priority_queue[neighbour] = new_dist
+                # update the routes to include the newly found distance
+                routes[neighbour] = routes[next_node] + [neighbour]
 
-        print(f'visited: {visited}')
-        print(f'priority queue', [priority_queue])
-
-    return visited
+    if show_route:
+        return visited, routes
+    else:
+        return visited
 
 
 if __name__ == "__main__":
@@ -43,5 +61,10 @@ if __name__ == "__main__":
                 frozenset({'D', 'E'}): 7,
                 frozenset({'C', 'E'}): 1}
 
-    min_paths = dijkstra(nodes_in, edges_in, 'A')
-    print(min_paths)
+    start_node = 'A'
+    end_node = 'E'
+
+    min_dist, route = dijkstra(nodes_in, edges_in, start=start_node, end=end_node, show_route=True)
+
+    print(f"The minimum distance from {start_node} to {end_node} is {min_dist}")
+    print(f"The quickest route is {' -> '.join(route)}")
